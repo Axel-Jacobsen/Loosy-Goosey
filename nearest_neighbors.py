@@ -8,8 +8,6 @@ import csv
 import numpy as np
 import time
 
-FNAME = 'trash.csv'
-
 
 def dist(x1, y1, x2, y2):
     return np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
@@ -23,88 +21,78 @@ def sort_by_second(r):
 
 
 def load_vals(fname):
-    x_data = {}
-    y_data = {}
+    data = []
     with open(fname) as f:
         reader = csv.DictReader(f)
         for row in reader:
-            x_data[row['id']] = float(row['x'])
-            y_data[row['id']] = float(row['y'])
+            data.append([row['id'], float(row['x']), float(row['y'])])
 
-    return x_data, y_data
-
-
-def dict_to_arr(d):
-    return [(key, float(d[key])) for key in d.keys()]
+    return data
 
 
-def start_index(arr, v, tuple_pos=1):
-    i = 0
-    while v > arr[i][tuple_pos]:
-        i = i + 1
+# Get the start index by first assuming that points are evenly distributed across all latitudes and longitudes
+def get_start_index(arr, x, tuple_pos=1):
+    i = int((x + 180) / 360 * len(arr))
+    if x < arr[i][tuple_pos]:
+        while x < arr[i][tuple_pos]:
+            i = i - 1
+    else:
+        while x > arr[i][tuple_pos]:
+            i = i + 1
     return i
 
-def get_lowest_N(lowest_N, N, id, d, x_val, y_val):
+
+def get_lowest_N(lowest_N, N, unit_data, index=3):
+    # unit_data: (id, x, y, d)
     for i, v in enumerate(lowest_N):
-        if d < v[1]:
-            lowest_N.insert(i, (id, d, x_val, y_val))
+        if unit_data[index] < v[index]:
+            lowest_N.insert(i, unit_data)
             lowest_N = lowest_N[0:N]
             break
-        elif d == v[1]:
+        elif unit_data[index] == v[index]:
             # we are dealing w/ a duplicate so break
             break
-    return lowest_N
+    return lowest_N, lowest_N[-1][3]
 
 
-def get_nearest_neighbors(x, y, , y_dict, N=5):
-    lowest_N = [(None, MAX_D) for _ in range(N)]
-    CLOSE_SIZE = N + 200
+def get_nearest_neighbors(x, y, data, N=5, tune=200):
+    # Let CLOSE_DIST be either N + tune, or 0.1% of the points; we will look
+    # at 2 * CLOSE_POINTS
+    # NOTE: tune=200 is just a guess; you would want tune to be large enough that,
+    #       for small data sets, we would get all candidate 'close points'
+    CLOSE_DIST = max(N + tune, int(len(data) * 0.001))
+    lowest_N = [(None, None, None, MAX_D) for _ in range(N)]
+    current_max_d = MAX_D
 
-    start_index_x = start_index(x_data, x)
-    # start_index_y = start_index(y_data, y)
+    start_index_x = get_start_index(data, x)
 
-    close_xs = x_data[(start_index_x - CLOSE_SIZE) : (start_index_x + CLOSE_SIZE)]
-    # close_ys = y_data[(start_index_y - CLOSE_SIZE) : (start_index_y + CLOSE_SIZE)]
+    # Do we cut off before we calculate the distances, or after we calculate the distance but before get_lowest_N(...) (at the cost of more values being calculated? Go with first for now, test to confirm later)
+    for i in range(1, CLOSE_DIST):
+        # if y val is less than max D, continue w/ calcs
+        #
+        v1 = data[start_index_x + i]
+        if abs(x - v1[1]) < current_max_d and abs(y - v1[2]) < current_max_d:
+            d1 = dist(x, y, v1[1], v1[2])
+            v1.append(d1)
+            lowest_N, current_max_d = get_lowest_N(lowest_N, N, v1)
 
-    xs_x = [v[1] for v in close_xs]
-    xs_y = [y_dict[v[0]] for v in close_xs]
-    # ys_y = [v[1] for v in close_ys]
-    # ys_x = [x_dict[v[0]] for v in close_ys]
-
-    plt.scatter(xs_x, xs_y, c='k')
-    # plt.scatter(ys_x, ys_y, c='k')
-
-    for x_row in close_xs:
-        x_val = x_row[1]
-        y_val = y_dict[x_row[0]]
-        id    = x_row[0]
-        d     = dist(x, y, x_val, y_val)
-
-        lowest_N = get_lowest_N(lowest_N, N, id, d, x_val, y_val)
-
-    # for y_row in close_ys:
-    #     x_val = x_dict[y_row[0]]
-    #     y_val = y_row[1]
-    #     id    = y_row[0]
-    #     d     = dist(x, y, x_val, y_val)
-
-    #     lowest_N = get_lowest_N(lowest_N, N, id, d, x_val, y_val)
-
-    assert len(lowest_N) == 20
+        v2 = data[start_index_x - i]
+        if abs(x - v2[1]) < current_max_d and abs(y - v2[2]) < current_max_d:
+            d2 = dist(x, y, v2[1], v2[2])
+            v2.append(d2)
+            lowest_N, current_max_d = get_lowest_N(lowest_N, N, v2)
 
     return lowest_N
 
 
 def prep_data(fname):
-    x_dict, y_dict = load_vals(FNAME)
-    x_data_arr = dict_to_arr(x_dict)
-    y_data_arr = dict_to_arr(y_dict)
-    x_data_arr.sort(key=sort_by_second)
-    y_data_arr.sort(key=sort_by_second)
-    return x_data_arr, y_data_arr, x_dict, y_dict
+    data = load_vals(FNAME)
+    # Sort by the x (i.e. longitude)
+    data.sort(key=sort_by_second)
+    return data
 
 
-def plot_vals(fname):
+def load_xs_ys(fname):
     xs, ys = [], []
     with open(fname) as f:
         reader = csv.DictReader(f)
@@ -116,26 +104,29 @@ def plot_vals(fname):
 
 if __name__ == '__main__':
 
-    '''
-    TODO: select close points with a radius
-    '''
+    FNAME = 'trash.csv'
+    X,Y = 0,0
+
     print("Preparing data")
-    x_data, y_data, x_dict, y_dict = prep_data(FNAME)
+    data = prep_data(FNAME)
 
     print("Finding nearest points")
-    t1 = time.time()
-    lowest_n = get_nearest_neighbors(0, 0, x_data, y_data, x_dict, y_dict, N=20)
-    t = time.time() - t1
-    print('Time to process: {:.3f} s'.format(t))
+    tt = 0
+    for i in range(100):
+        t1 = time.time()
+        lowest_n = get_nearest_neighbors(X, Y, data, N=5)
+        tt += time.time() - t1
+    print('Points found; Average execution time: {}'.format(tt/100))
 
-    low_xs = [r[2] for r in lowest_n]
-    low_ys = [r[3] for r in lowest_n]
+    print('Plotting points')
+    low_xs = [r[1] for r in lowest_n]
+    low_ys = [r[2] for r in lowest_n]
 
-    xs, ys = plot_vals(FNAME)
-    plt.scatter(xs, ys, s=3)
-    plt.scatter(low_xs, low_ys, 5)
-    plt.scatter(0, 0, s=9)
+    xs, ys = load_xs_ys(FNAME)
+    plt.scatter(xs, ys, s=3, zorder=0)
+    plt.scatter(low_xs, low_ys, 5, zorder=0)
+    plt.scatter(X, Y, s=9, zorder=2, c='0')
     plt.axis('equal')
-    plt.show()
 
     print('DONE')
+    plt.show()
