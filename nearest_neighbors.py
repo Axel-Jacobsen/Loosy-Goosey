@@ -16,10 +16,6 @@ def dist(x1, y1, x2, y2):
 MAX_D = dist(180, 90, -180, -90)
 
 
-def sort_by_second(r):
-    return r[1]
-
-
 def load_vals(fname):
     data = []
     with open(fname) as f:
@@ -69,7 +65,6 @@ def get_nearest_neighbors(x, y, data, N=5, tune=200):
     # Do we cut off before we calculate the distances, or after we calculate the distance but before get_lowest_N(...) (at the cost of more values being calculated? Go with first for now, test to confirm later)
     for i in range(1, CLOSE_DIST):
         # if y val is less than max D, continue w/ calcs
-        #
         v1 = data[start_index_x + i]
         if abs(x - v1[1]) < current_max_d and abs(y - v1[2]) < current_max_d:
             d1 = dist(x, y, v1[1], v1[2])
@@ -88,7 +83,7 @@ def get_nearest_neighbors(x, y, data, N=5, tune=200):
 def prep_data(fname):
     data = load_vals(FNAME)
     # Sort by the x (i.e. longitude)
-    data.sort(key=sort_by_second)
+    data.sort(key=(lambda r: r[1]))
     return data
 
 
@@ -105,7 +100,7 @@ def load_xs_ys(fname):
 if __name__ == '__main__':
 
     FNAME = 'trash.csv'
-    X,Y = 0,0
+    X, Y = 0, 0
 
     print("Preparing data")
     data = prep_data(FNAME)
