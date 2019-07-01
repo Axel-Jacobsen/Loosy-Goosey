@@ -13,9 +13,10 @@ with open(fname, 'w') as f:
     f.write('id,x,y\n')
     for i in range(N):
         id = uuid.uuid4().hex
-        xpos = r.uniform(-180, 180)
-        ypos = r.uniform(-90, 90)
+        xpos = (r.betavariate(15,10) - 0.5) * 360
+        ypos = (r.betavariate(10, 10) - 0.5) * 180
         row = '{}, {:.5}, {:.5}\n'.format(id, xpos, ypos)
         f.write(row)
 
 print('Wrote {} random locations to {}'.format(N, fname))
+

@@ -26,7 +26,26 @@ def load_vals(fname):
     return data
 
 
+def prep_data(fname):
+    data = load_vals(fname)
+    # Sort by the x (i.e. longitude)
+    data.sort(key=(lambda r: r[1]))
+    return data
+
+
+def load_xs_ys(fname):
+    xs, ys = [], []
+    with open(fname) as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            xs.append(float(row['x']))
+            ys.append(float(row['y']))
+    
+    return xs, ys
+
 # Get the start index by first assuming that points are evenly distributed across all latitudes and longitudes
+
+
 def get_start_index(arr, x, tuple_pos=1):
     i = int((x + 180) / 360 * len(arr))
     if x < arr[i][tuple_pos]:
@@ -56,7 +75,7 @@ def get_nearest_neighbors(x, y, data, N=5, tune=200):
     # at 2 * CLOSE_POINTS
     # NOTE: tune=200 is just a guess; you would want tune to be large enough that,
     #       for small data sets, we would get all candidate 'close points'
-    CLOSE_DIST = max(N + tune, int(len(data) * 0.001))
+    CLOSE_DIST = max(N + tune, int(len(data) * 0.01))
     lowest_N = [(None, None, None, MAX_D) for _ in range(N)]
     current_max_d = MAX_D
 
@@ -78,23 +97,6 @@ def get_nearest_neighbors(x, y, data, N=5, tune=200):
             lowest_N, current_max_d = get_lowest_N(lowest_N, N, v2)
 
     return lowest_N
-
-
-def prep_data(fname):
-    data = load_vals(FNAME)
-    # Sort by the x (i.e. longitude)
-    data.sort(key=(lambda r: r[1]))
-    return data
-
-
-def load_xs_ys(fname):
-    xs, ys = [], []
-    with open(fname) as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            xs.append(float(row['x']))
-            ys.append(float(row['y']))
-    return xs, ys
 
 
 if __name__ == '__main__':
@@ -122,6 +124,8 @@ if __name__ == '__main__':
     plt.scatter(low_xs, low_ys, 5, zorder=0)
     plt.scatter(X, Y, s=9, zorder=2, c='0')
     plt.axis('equal')
+    plt.xlim((-180, 180))
+    plt.ylim((-90, 90))
 
     print('DONE')
     plt.show()
