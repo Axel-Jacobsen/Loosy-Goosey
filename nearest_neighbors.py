@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import csv
 import numpy as np
 import time
+from prep_data import PrepData
 
 
 def dist(x1, y1, x2, y2):
@@ -16,36 +17,7 @@ def dist(x1, y1, x2, y2):
 MAX_D = dist(180, 90, -180, -90)
 
 
-def load_vals(fname):
-    data = []
-    with open(fname) as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            data.append([row['id'], float(row['x']), float(row['y'])])
-
-    return data
-
-
-def prep_data(fname):
-    data = load_vals(fname)
-    # Sort by the x (i.e. longitude)
-    data.sort(key=(lambda r: r[1]))
-    return data
-
-
-def load_xs_ys(fname):
-    xs, ys = [], []
-    with open(fname) as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            xs.append(float(row['x']))
-            ys.append(float(row['y']))
-    
-    return xs, ys
-
 # Get the start index by first assuming that points are evenly distributed across all latitudes and longitudes
-
-
 def get_start_index(arr, x, tuple_pos=1):
     i = int((x + 180) / 360 * len(arr))
     if x < arr[i][tuple_pos]:
@@ -54,6 +26,7 @@ def get_start_index(arr, x, tuple_pos=1):
     else:
         while x > arr[i][tuple_pos]:
             i = i + 1
+
     return i
 
 
@@ -67,6 +40,7 @@ def get_lowest_N(lowest_N, N, unit_data, index=3):
         elif unit_data[index] == v[index]:
             # we are dealing w/ a duplicate so break
             break
+
     return lowest_N, lowest_N[-1][3]
 
 
@@ -105,7 +79,7 @@ if __name__ == '__main__':
     X, Y = 0, 0
 
     print("Preparing data")
-    data = prep_data(FNAME)
+    data = PrepData.load_and_sort_values(FNAME)
 
     print("Finding nearest points")
     tt = 0
@@ -119,7 +93,7 @@ if __name__ == '__main__':
     low_xs = [r[1] for r in lowest_n]
     low_ys = [r[2] for r in lowest_n]
 
-    xs, ys = load_xs_ys(FNAME)
+    xs, ys = PrepData.load_xs_ys(FNAME)
     plt.scatter(xs, ys, s=3, zorder=0)
     plt.scatter(low_xs, low_ys, 5, zorder=0)
     plt.scatter(X, Y, s=9, zorder=2, c='0')
