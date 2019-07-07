@@ -13,8 +13,8 @@ with open(fname, 'w') as f:
     f.write('id,x,y\n')
     for i in range(N):
         id = uuid.uuid4().hex
-        xpos = (r.betavariate(1,10) - 0.5) * 360
-        ypos = (r.betavariate(10, 10) - 0.5) * 180
+        xpos = (r.betavariate(5,5) - 0.5) * 360
+        ypos = (r.betavariate(5, 6) - 0.5) * 180
         row = '{}, {:.5}, {:.5}\n'.format(id, xpos, ypos)
         f.write(row)
 

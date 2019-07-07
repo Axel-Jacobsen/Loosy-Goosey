@@ -65,7 +65,7 @@ if __name__ == '__main__':
     xs, ys = PrepData.load_xs_ys(FNAME)
     plt.scatter(xs, ys, s=2)
     t1 = time.time()
-    densities = get_density(data, -180, 180, -90, 90, level=5)
+    densities = get_density(data, -180, 180, -90, 90, level=9)
     print('Time to get density: ', time.time() - t1)
 
     fig, ax = plot_density(densities)
