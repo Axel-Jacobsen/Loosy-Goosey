@@ -17,10 +17,10 @@ def get_density(data, x_low, x_top, y_low, y_top, level=5):
     [[num_points_in_grid, [x_low, x_high, y_low, y_high]],
      [num_points_in_grid, [x_low, x_high, y_low, y_high]], ....]
     """
-    data = list(filter(lambda row: x_low < row[1] and row[1] < x_top, data))
+    data = filter(lambda row: x_low < row[1] and row[1] < x_top, data)
     data = list(filter(lambda row: y_low < row[2] and row[2] < y_top, data))
 
-    # catch cases where level is negative (invalid case) and base case (level is 0)
+    # catch base cases where level is negative (invalid case) and base case (level is 0)
     if level <= 0:
         return [[len(data), {'x_low': x_low, 'x_top': x_top, 'y_low': y_low, 'y_top': y_top}]]
 
